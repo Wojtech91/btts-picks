@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BTTS Picks Today</title>
+<title>BTTS Picks</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
@@ -11,8 +11,7 @@
 
 <header class="bg-white shadow p-4 mb-4">
   <div class="max-w-4xl mx-auto flex justify-between items-center">
-    <h1 class="text-2xl font-bold">BTTS Picks for Today</h1>
-    <div class="text-sm text-gray-500" id="today"></div>
+    <h1 class="text-2xl font-bold">BTTS Picks</h1>
   </div>
 </header>
 
@@ -25,7 +24,7 @@
   <!-- Referral link -->
   <div class="mt-6 text-center">
     <a href="https://oddalerts.com/join/JYEJ05TG" target="_blank" class="text-blue-600 underline">
-      ODDALERTS
+      https://oddalerts.com/join/JYEJ05TG
     </a>
   </div>
 
@@ -34,16 +33,9 @@
 <script>
 const DEFAULT_CSV_URL = 'matches.csv';
 
-// Pokazuje dzisiejsze mecze
-function filterToday(rows) {
-  const today = new Date().toISOString().slice(0,10); // YYYY-MM-DD
-  return rows.filter(r => (r.Date||'').trim() === today);
-}
-
-// Render tabeli
 function renderTable(rows){
   if(!rows.length){
-    document.getElementById('matches').innerHTML = '<div class="p-4 text-gray-600">No picks for today.</div>';
+    document.getElementById('matches').innerHTML = '<div class="p-4 text-gray-600">No matches found.</div>';
     return;
   }
   let html = `<table class="w-full text-left border-collapse"><thead><tr class="border-b"><th class="p-2">Date</th><th class="p-2">Match</th><th class="p-2">BTTS</th></tr></thead><tbody>`;
@@ -54,3 +46,25 @@ function renderTable(rows){
     const btts = (r.BTTS || '').trim();
     const badge = btts.toLowerCase().startsWith('y')
       ? '<span class="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800">Yes</span>'
+      : '<span class="inline-block px-3 py-1 rounded-full bg-red-100 text-red-800">No</span>';
+    html += `<tr class="border-b"><td class="p-2 align-top">${date}</td><td class="p-2">${home} — ${away}</td><td class="p-2">${badge}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('matches').innerHTML = html;
+}
+
+// Fetch CSV i render
+fetch(DEFAULT_CSV_URL)
+  .then(res => res.text())
+  .then(txt => {
+    const parsed = Papa.parse(txt, {header:true, skipEmptyLines:true});
+    renderTable(parsed.data);
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById('matches').innerHTML = '<div class="p-4 text-red-600">Error loading CSV.</div>';
+  });
+</script>
+
+</body>
+</html>
