@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BTTS Picks</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800">
 
@@ -17,25 +18,53 @@
 <main class="max-w-4xl mx-auto p-4">
 
   <div id="matches" class="bg-white shadow rounded p-2 min-h-[120px]">
-    Loading matches...
+    Waiting for matches...
   </div>
 
   <div class="mt-6 text-center">
     <a href="https://oddalerts.com/join/JYEJ05TG" target="_blank" class="text-blue-600 underline">
-      https://oddalerts.com/join/JYEJ05TG
+      ODDALERT
     </a>
   </div>
 
 </main>
 
 <script>
-// Twój klucz API
 const API_KEY = '504cc9cea62cfefe02ada8ac16d6a588';
-
-// Pobierz dzisiejszą datę w formacie YYYY-MM-DD
 const today = new Date().toISOString().slice(0,10);
 
-// Funkcja renderująca tabelę
+// Wczytanie CSV z typami BTTS
+let bttsMap = {};
+Papa.parse('btts-picks.csv', {
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  complete: function(results) {
+    results.data.forEach(r => {
+      const key = r.Date + r.Home + r.Away;
+      bttsMap[key] = r.BTTS;
+    });
+    fetchMatches();
+  }
+});
+
+// Fetch dzisiejszych meczów z API-Football
+function fetchMatches() {
+  fetch(`https://v3.football.api-sports.io/fixtures?date=${today}`, {
+    headers: {
+      'X-RapidAPI-Key': API_KEY,
+      'X-RapidAPI-Host': 'v3.football.api-sports.io'
+    }
+  })
+  .then(res => res.json())
+  .then(data => renderTable(data.response))
+  .catch(err => {
+    console.error(err);
+    document.getElementById('matches').innerHTML = '<div class="p-4 text-red-600">Error loading matches from API.</div>';
+  });
+}
+
+// Renderowanie tabeli z typami BTTS z CSV
 function renderTable(matches) {
   if(!matches.length) {
     document.getElementById('matches').innerHTML = '<div class="p-4 text-gray-600">No matches found.</div>';
@@ -43,7 +72,13 @@ function renderTable(matches) {
   }
 
   let html = `<table class="w-full text-left border-collapse">
-    <thead><tr class="border-b"><th class="p-2">Date</th><th class="p-2">Time</th><th class="p-2">League</th><th class="p-2">Match</th><th class="p-2">BTTS</th></tr></thead><tbody>`;
+    <thead><tr class="border-b">
+      <th class="p-2">Date</th>
+      <th class="p-2">Time</th>
+      <th class="p-2">League</th>
+      <th class="p-2">Match</th>
+      <th class="p-2">BTTS</th>
+    </tr></thead><tbody>`;
 
   matches.forEach(m => {
     const date = m.fixture.date.slice(0,10);
@@ -51,32 +86,24 @@ function renderTable(matches) {
     const league = m.league.name;
     const home = m.teams.home.name;
     const away = m.teams.away.name;
-    // Przykład typowania BTTS losowo
-    const btts = Math.random() > 0.5 ? 'Yes' : 'No';
+    const key = date + home + away;
+    const btts = bttsMap[key] || 'No'; // jeśli brak w CSV, domyślnie No
     const badge = btts === 'Yes' 
       ? '<span class="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800">Yes</span>'
       : '<span class="inline-block px-3 py-1 rounded-full bg-red-100 text-red-800">No</span>';
 
-    html += `<tr class="border-b"><td class="p-2">${date}</td><td class="p-2">${time}</td><td class="p-2">${league}</td><td class="p-2">${home} — ${away}</td><td class="p-2">${badge}</td></tr>`;
+    html += `<tr class="border-b">
+      <td class="p-2">${date}</td>
+      <td class="p-2">${time}</td>
+      <td class="p-2">${league}</td>
+      <td class="p-2">${home} — ${away}</td>
+      <td class="p-2">${badge}</td>
+    </tr>`;
   });
 
   html += '</tbody></table>';
   document.getElementById('matches').innerHTML = html;
 }
-
-// Fetch z API-Football
-fetch(`https://v3.football.api-sports.io/fixtures?date=${today}`, {
-  headers: {
-    'X-RapidAPI-Key': API_KEY,
-    'X-RapidAPI-Host': 'v3.football.api-sports.io'
-  }
-})
-.then(res => res.json())
-.then(data => renderTable(data.response))
-.catch(err => {
-  console.error(err);
-  document.getElementById('matches').innerHTML = '<div class="p-4 text-red-600">Error loading matches from API.</div>';
-});
 </script>
 
 </body>
