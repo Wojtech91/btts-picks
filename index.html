@@ -1,70 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BTTS Picks</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<body>
+<h1>Test CSV Load</h1>
+<div id="matches">Loading...</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-</head>
-<body class="bg-gray-50 text-gray-800">
-
-<header class="bg-white shadow p-4 mb-4">
-  <div class="max-w-4xl mx-auto flex justify-between items-center">
-    <h1 class="text-2xl font-bold">BTTS Picks</h1>
-  </div>
-</header>
-
-<main class="max-w-4xl mx-auto p-4">
-
-  <div id="matches" class="bg-white shadow rounded p-2 min-h-[120px]">
-    Loading...
-  </div>
-
-  <!-- Referral link -->
-  <div class="mt-6 text-center">
-    <a href="https://oddalerts.com/join/JYEJ05TG" target="_blank" class="text-blue-600 underline">
-      https://oddalerts.com/join/JYEJ05TG
-    </a>
-  </div>
-
-</main>
-
 <script>
-const DEFAULT_CSV_URL = 'matches.csv';
-
-function renderTable(rows){
-  if(!rows.length){
-    document.getElementById('matches').innerHTML = '<div class="p-4 text-gray-600">No matches found.</div>';
-    return;
-  }
-  let html = `<table class="w-full text-left border-collapse"><thead><tr class="border-b"><th class="p-2">Date</th><th class="p-2">Match</th><th class="p-2">BTTS</th></tr></thead><tbody>`;
-  rows.forEach(r=>{
-    const date = r.Date || '';
-    const home = r.Home || '';
-    const away = r.Away || '';
-    const btts = (r.BTTS || '').trim();
-    const badge = btts.toLowerCase().startsWith('y')
-      ? '<span class="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800">Yes</span>'
-      : '<span class="inline-block px-3 py-1 rounded-full bg-red-100 text-red-800">No</span>';
-    html += `<tr class="border-b"><td class="p-2 align-top">${date}</td><td class="p-2">${home} — ${away}</td><td class="p-2">${badge}</td></tr>`;
-  });
-  html += '</tbody></table>';
-  document.getElementById('matches').innerHTML = html;
-}
-
-// Fetch CSV i render
-fetch(DEFAULT_CSV_URL)
+fetch('matches.csv')
   .then(res => res.text())
   .then(txt => {
-    const parsed = Papa.parse(txt, {header:true, skipEmptyLines:true});
-    renderTable(parsed.data);
+    document.getElementById('matches').innerText = txt;
   })
   .catch(err => {
+    document.getElementById('matches').innerText = 'Error loading CSV';
     console.error(err);
-    document.getElementById('matches').innerHTML = '<div class="p-4 text-red-600">Error loading CSV.</div>';
   });
 </script>
-
 </body>
 </html>
